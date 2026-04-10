@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediPortal — Patient Records</title>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px;
+        }
+        h1 {
+        color: #2c5f8a;
+        }
+        nav a {
+        margin-right: 16px;
+        color: #2c5f8a;
+        text-decoration: none;
+        }
+        nav a:hover {
+        text-decoration: underline;
+        }
+        table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        }
+        th,
+        td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        text-align: left;
+        vertical-align: top;
+        }
+        th {
+        background: #2c5f8a;
+        color: #fff;
+        }
+        tr:nth-child(even) {
+        background: #f2f7fc;
+        }
+        .search-form {
+        margin-top: 16px;
+        }
+        .search-form input[type="text"] {
+        padding: 6px;
+        width: 260px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        }
+        .search-form button,
+        .add-form button {
+        padding: 6px 14px;
+        background: #2c5f8a;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+        .calc-form {
+        margin-top: 24px;
+        padding: 12px;
+        background: #fff8e1;
+        border: 1px solid #f0c040;
+        border-radius: 4px;
+        }
+        .calc-form input[type="text"] {
+        padding: 6px;
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        }
+        .calc-form button {
+        padding: 6px 14px;
+        background: #e67e22;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+        .add-form {
+        margin-top: 24px;
+        padding: 16px;
+        background: #eaf4fb;
+        border: 1px solid #aed4ec;
+        border-radius: 6px;
+        }
+        .add-form h3 {
+        margin: 0 0 12px;
+        color: #2c5f8a;
+        }
+        .add-form input[type="text"],
+        .add-form textarea {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+        }
+        .add-form .row {
+        display: flex;
+        gap: 12px;
+        }
+        .add-form .row input {
+        flex: 1;
+        }
+        .inline-form input[type="text"] {
+        padding: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+        box-sizing: border-box;
+        }
+        .btn-update {
+        padding: 4px 10px;
+        background: #2c5f8a;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 4px;
+        }
+        .btn-delete {
+        padding: 4px 10px;
+        background: #c0392b;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+        .btn-delete:hover {
+        background: #96281b;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <h1>MediPortal</h1>
+    <nav>
+        <a href="/records">Records</a>
+        <a href="/admin">Admin Panel</a>
+        <a href="/logout">Log Out</a>
+    </nav>
+
+    <h2>Patient Records</h2>
+
+    {% if role == "doctor" %}
+
+
+    <div class="search-form">
+        <form method="GET" action="/records">
+            <input type="text" name="search" placeholder="Search by name or diagnosis" value="">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <!-- Filter by patient ID, demonstrates IDOR: any doctor can query any patient_id -->
+    <div class="search-form" style="margin-top:8px;">
+        <form method="GET" action="/records">
+            <input type="text" name="patient_id" placeholder="Filter by Patient ID">
+            <button type="submit">Filter</button>
+        </form>
+    </div>
+
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Patient ID</th>
+                <th>Patient Name</th>
+                <th>Diagnosis</th>
+                <th>Notes</th>
+                <th>Created At</th>
+                {% if role == "doctor" %}<th>Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record.id }}</td>
+                <td>{{ record.patient_id }}</td>
+                <td>{{ record.patient_name }}</td>
+                <td>{{ record.diagnosis }}</td>
+
+                <!-- vulnerability: XSS via Disabled Auto-Escaping, the `| safe` filter
+                     tells Jinja2 to render the notes field as raw HTML without escaping.
+                     CWE: CWE-79 (Improper Neutralisation of Input During Web Page Generation) -->
+                <td>{{ record.notes | safe }}</td>
+
+                <td>{{ record.created_at }}</td>
+
+                {% if role == "doctor" %}
+                <td>
+                    <form method="POST" action="/records/update" class="inline-form">
+                        <input type="hidden" name="record_id" value="{{ record.id }}">
+                        <input type="text" name="notes" value="{{ record.notes }}" placeholder="New notes">
+                        <button type="submit" class="btn-update">Update</button>
+                    </form>
+                    <form method="POST" action="/records/delete" style="margin-top:6px;"
+                          onsubmit="return confirm('Delete record {{ record.id }}?');">
+                        <input type="hidden" name="record_id" value="{{ record.id }}">
+                        <button type="submit" class="btn-delete">Delete</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if role == "doctor" %}
+
+    <div class="add-form">
+        <h3>Add New Record</h3>
+        <form method="POST" action="/records/add">
+            <div class="row">
+                <input type="text" name="patient_id"   placeholder="Patient ID"   required>
+                <input type="text" name="patient_name" placeholder="Patient Name" required>
+                <input type="text" name="diagnosis"    placeholder="Diagnosis"    required>
+            </div>
+            <textarea name="notes" rows="2" placeholder="Notes (HTML allowed — XSS demo)"></textarea>
+            <button type="submit">Add Record</button>
+        </form>
+    </div>
+
+    <div class="calc-form">
+        <strong>Dosage Calculator</strong> (e.g. <code>70 * 0.5</code>)
+        <form method="GET" action="/records/calculate" target="_blank">
+            <input type="text" name="expr" placeholder="Enter expression">
+            <button type="submit">Calculate</button>
+        </form>
+    </div>
+
+    {% endif %}
+</body>
+</html>

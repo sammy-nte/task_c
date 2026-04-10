@@ -1,0 +1,10 @@
+# NOTE: These versions are intentionally pinned to older releases that contain known CVEs.
+# Flask 3.0.0 — CVE-2023-30861: session cookie may be disclosed to sub-domains when
+#   the Vary: Cookie header is not respected; weak SECRET_KEY amplifies this risk.
+# Werkzeug 3.0.1 — CVE-2023-46136: Content-Disposition header parsing DoS; a crafted
+#   multipart upload can cause Werkzeug to consume excessive CPU and memory.
+# Both are flagged by dependency scanners (pip-audit, Semgrep supply-chain rules, Snyk).
+# NOTE: Flask 2.0.1 / 2.3.x are incompatible with Python 3.14 (pkgutil.get_loader removed).
+#       3.0.0 is the oldest Flask release that runs on Python 3.14 while still having CVEs.
+Flask==3.0.0
+Werkzeug==3.0.1
