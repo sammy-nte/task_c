@@ -37,7 +37,7 @@ jobs:
             --config p/secrets \
             --json \
             --output semgrep-results.json \
-            task-c/ || true
+            task_c/ || true
 
       - name: Display Semgrep Results
         run: |
@@ -49,7 +49,7 @@ jobs:
             --config p/flask \
             --config p/owasp-top-ten \
             --config p/secrets \
-            task-c/ || true
+            task_c/ || true
 
       - name: Upload Semgrep JSON report
         uses: actions/upload-artifact@v4
@@ -67,4 +67,4 @@ jobs:
             --config p/owasp-top-ten \
             --config p/secrets \
             --severity ERROR \
-            task-c/
+            task_c/
