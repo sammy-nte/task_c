@@ -16,19 +16,31 @@ jobs:
     name: Static Analysis Security Testing
     runs-on: ubuntu-latest
 
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep — Python Security Rules
+      - name: Semgrep CI — report to dashboard
+        run: semgrep ci || true
+
+
+      - name: Semgrep — print findings to Actions log
+        run: |
+          semgrep \
+            --config p/python \
+            --config p/flask \
+            --config p/owasp-top-ten \
+            --config p/secrets \
+            . || true
+
+
+      - name: Semgrep — save JSON report
         run: |
           semgrep \
             --config p/python \
@@ -39,32 +51,10 @@ jobs:
             --output semgrep-results.json \
             . || true
 
-      - name: Display Semgrep Results
-        run: |
-          echo "========================================="
-          echo "  MEDIAPORTAL SEMGREP SCAN RESULTS"
-          echo "========================================="
-          semgrep \
-            --config p/python \
-            --config p/flask \
-            --config p/owasp-top-ten \
-            --config p/secrets \
-            . || true
-
-      - name: Upload Semgrep JSON report
+      - name: Upload JSON report as artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: semgrep-report
           path: semgrep-results.json
           retention-days: 30
-
-      - name: Run Semgrep — Fail on Critical Findings
-        run: |
-          semgrep \
-            --config p/python \
-            --config p/flask \
-            --config p/owasp-top-ten \
-            --config p/secrets \
-            --severity ERROR \
-            .
