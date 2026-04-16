@@ -45,7 +45,7 @@ jobs:
           semgrep \
             --config p/python \
             --config p/flask \
-            --config p/owasp-top-ten \
+            --config p/owasp-top-ten \8w
             --config p/secrets \
             --json \
             --output semgrep-results.json \
